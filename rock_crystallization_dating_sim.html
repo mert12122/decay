@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rock Crystallization Dating Lab</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-warm: #f5ede0;
+    --bg-panel: #faf5ec;
+    --rock-fill: #4a3a2c;
+    --rock-stroke: #2a1f15;
+    --parent-color: #6b3fa0;
+    --parent-glow: #8a5fc0;
+    --daughter-color: #d4a017;
+    --daughter-glow: #e8c040;
+    --accent: #8b6f47;
+    --accent-dark: #5d4a30;
+    --text-dark: #2a1f15;
+    --text-medium: #5d4a30;
+    --button-bg: #8b6f47;
+    --button-hover: #5d4a30;
+    --table-border: #c9b896;
+    --success: #4a7d3a;
+  }
+
+  body {
+    font-family: 'Courier Prime', 'Courier New', monospace;
+    background: var(--bg-warm);
+    color: var(--text-dark);
+    padding: 6px;
+  }
+
+  .lab-container {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    background: var(--bg-panel);
+    border: 2px solid var(--accent-dark);
+    border-radius: 6px;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: 240px 160px 1fr;
+    gap: 10px;
+    align-items: start;
+  }
+
+  .panel {
+    background: white;
+    border: 1px solid var(--table-border);
+    border-radius: 5px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .panel-title {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--accent-dark);
+    text-align: center;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* ===== Rock panel ===== */
+  .rock-panel {
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  #rockSvg {
+    width: 100%;
+    max-width: 220px;
+    height: auto;
+    aspect-ratio: 1;
+  }
+
+  .atom-counts {
+    margin-top: 6px;
+    width: 100%;
+    font-size: 12px;
+  }
+
+  .count-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-bottom: 3px;
+  }
+
+  .count-row.parent {
+    background: rgba(107, 63, 160, 0.12);
+    border-left: 4px solid var(--parent-color);
+  }
+
+  .count-row.daughter {
+    background: rgba(212, 160, 23, 0.12);
+    border-left: 4px solid var(--daughter-color);
+  }
+
+  .count-label {
+    font-weight: bold;
+    font-size: 11px;
+  }
+
+  .count-value {
+    font-size: 15px;
+    font-weight: bold;
+    color: var(--text-dark);
+  }
+
+  /* ===== Controls panel ===== */
+  .controls-panel {
+    /* No justify-content: space-between — let it flow naturally */
+  }
+
+  .controls-panel > div:first-child {
+    margin-bottom: 8px;
+  }
+
+  .time-display {
+    text-align: center;
+    margin-bottom: 6px;
+  }
+
+  .time-display .label {
+    font-size: 11px;
+    color: var(--text-dark);
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .time-display .value {
+    font-size: 30px;
+    font-weight: bold;
+    color: var(--accent-dark);
+    line-height: 1;
+    margin-top: 4px;
+  }
+
+  .time-display .sub-value {
+    font-size: 12px;
+    color: var(--text-dark);
+    font-weight: bold;
+    margin-top: 4px;
+  }
+
+  button {
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .advance-btn {
+    background: var(--button-bg);
+    color: white;
+    padding: 10px 8px;
+    font-size: 13px;
+    font-weight: bold;
+    border-radius: 5px;
+    width: 100%;
+    margin-bottom: 6px;
+    box-shadow: 0 2px 0 var(--button-hover);
+    line-height: 1.2;
+  }
+
+  .advance-btn:hover:not(:disabled) {
+    background: var(--button-hover);
+    transform: translateY(1px);
+    box-shadow: 0 1px 0 var(--button-hover);
+  }
+
+  .advance-btn:disabled {
+    background: #b8a888;
+    cursor: not-allowed;
+    box-shadow: 0 2px 0 #8a7a5a;
+  }
+
+  .reset-btn {
+    background: white;
+    color: var(--text-dark);
+    border: 1px solid var(--accent-dark);
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: bold;
+    border-radius: 4px;
+    width: 100%;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .reset-btn:hover {
+    background: var(--accent-dark);
+    color: white;
+  }
+
+  /* ===== Table panel ===== */
+  .table-panel {
+    /* Table grows naturally as data is added */
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  th, td {
+    padding: 5px 6px;
+    text-align: center;
+    border: 1px solid var(--table-border);
+    color: var(--text-dark);
+  }
+
+  td {
+    font-weight: bold;
+  }
+
+  th {
+    background: var(--accent);
+    color: white;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 10px;
+  }
+
+  tr.row-new {
+    animation: highlightRow 1s ease;
+  }
+
+  @keyframes highlightRow {
+    0% { background: #fff8d8; }
+    100% { background: white; }
+  }
+
+  /* ===== Atom dot styling ===== */
+  .atom-dot {
+    transition: fill 0.5s ease;
+  }
+
+  .atom-dot.decaying {
+    animation: decayPulse 0.8s ease;
+  }
+
+  @keyframes decayPulse {
+    0% { r: 4; opacity: 1; }
+    50% { r: 7; opacity: 0.6; filter: drop-shadow(0 0 5px var(--daughter-glow)); }
+    100% { r: 4; opacity: 1; }
+  }
+
+  /* ===== Mobile responsive ===== */
+  @media (max-width: 600px) {
+    .lab-container {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="lab-container">
+
+  <!-- Rock panel -->
+  <div class="panel rock-panel">
+    <div class="panel-title">The Rock</div>
+    <svg id="rockSvg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+      <polygon
+        points="50,80 90,40 160,30 220,55 270,110 280,180 240,250 170,275 90,260 40,200 30,140"
+        fill="var(--rock-fill)"
+        stroke="var(--rock-stroke)"
+        stroke-width="3"
+        stroke-linejoin="round"
+      />
+      <g id="atomLayer"></g>
+    </svg>
+    <div class="atom-counts">
+      <div class="count-row parent">
+        <span class="count-label">K-40:</span>
+        <span class="count-value" id="parentCount">200</span>
+      </div>
+      <div class="count-row daughter">
+        <span class="count-label">Ar-40:</span>
+        <span class="count-value" id="daughterCount">0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls panel -->
+  <div class="panel controls-panel">
+    <div>
+      <div class="panel-title">Time</div>
+      <div class="time-display">
+        <div class="label">Half-Lives</div>
+        <div class="value" id="halfLivesValue">0</div>
+        <div class="sub-value"><span id="timeValue">0</span> Ma</div>
+      </div>
+    </div>
+    <div>
+      <button class="advance-btn" id="advanceBtn">
+        ⏵ Advance 1 Half-Life<br>
+        <span style="font-size: 9px; font-weight: normal;">(1.25 Ga)</span>
+      </button>
+      <button class="reset-btn" id="resetBtn">↺ Reset</button>
+    </div>
+  </div>
+
+  <!-- Data table panel -->
+  <div class="panel table-panel">
+    <div class="panel-title">Data</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Half-Life</th>
+          <th>Time (Ma)</th>
+          <th>K-40 Atoms</th>
+          <th>% K-40</th>
+        </tr>
+      </thead>
+      <tbody id="dataTableBody">
+        <tr>
+          <td>0</td>
+          <td>0</td>
+          <td>200</td>
+          <td>100.0%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+  // ============================================
+  // Rock Crystallization Dating Lab
+  // ============================================
+
+  const HALF_LIFE_MA = 1250;        // 1.25 Ga in Ma
+  const INITIAL_PARENT = 200;
+  const MAX_HALF_LIVES = 7;
+
+  // State
+  let parentAtoms = [];   // array of atom objects {id, x, y, isParent}
+  let halfLivesElapsed = 0;
+  let isAnimating = false;
+
+  // DOM refs
+  const atomLayer = document.getElementById('atomLayer');
+  const parentCountEl = document.getElementById('parentCount');
+  const daughterCountEl = document.getElementById('daughterCount');
+  const halfLivesValueEl = document.getElementById('halfLivesValue');
+  const timeValueEl = document.getElementById('timeValue');
+  const advanceBtn = document.getElementById('advanceBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const tableBody = document.getElementById('dataTableBody');
+
+  // ====== Initialize the rock with 200 atoms scattered inside ======
+  function initRock() {
+    parentAtoms = [];
+    atomLayer.innerHTML = '';
+
+    // Rock polygon points to constrain atom placement
+    const rockBounds = { minX: 50, maxX: 270, minY: 50, maxY: 260 };
+
+    let placed = 0;
+    let attempts = 0;
+    while (placed < INITIAL_PARENT && attempts < 5000) {
+      const x = rockBounds.minX + Math.random() * (rockBounds.maxX - rockBounds.minX);
+      const y = rockBounds.minY + Math.random() * (rockBounds.maxY - rockBounds.minY);
+
+      // Approximate rock interior check (circle-ish)
+      const cx = 155, cy = 155, rx = 115, ry = 115;
+      const dx = (x - cx) / rx;
+      const dy = (y - cy) / ry;
+      if (dx * dx + dy * dy > 0.95) {
+        attempts++;
+        continue;
+      }
+
+      const atom = {
+        id: placed,
+        x: x,
+        y: y,
+        isParent: true
+      };
+      parentAtoms.push(atom);
+
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', x);
+      circle.setAttribute('cy', y);
+      circle.setAttribute('r', 4);
+      circle.setAttribute('fill', '#6b3fa0');  // K-40 purple
+      circle.setAttribute('class', 'atom-dot');
+      circle.setAttribute('id', 'atom-' + placed);
+      atomLayer.appendChild(circle);
+
+      placed++;
+      attempts++;
+    }
+  }
+
+  // ====== Decay one half-life: roughly half the parent atoms become daughter ======
+  function advanceHalfLife() {
+    if (isAnimating || halfLivesElapsed >= MAX_HALF_LIVES) return;
+
+    isAnimating = true;
+    advanceBtn.disabled = true;
+
+    const stillParent = parentAtoms.filter(a => a.isParent);
+
+    // Each parent atom has a 50% chance to decay this half-life (true random behavior)
+    // This produces results AROUND 50% but with realistic variation
+    const toDecay = stillParent.filter(() => Math.random() < 0.5);
+
+    // Animate the decay
+    toDecay.forEach((atom, i) => {
+      setTimeout(() => {
+        atom.isParent = false;
+        const circle = document.getElementById('atom-' + atom.id);
+        if (circle) {
+          circle.classList.add('decaying');
+          setTimeout(() => {
+            circle.setAttribute('fill', '#d4a017'); // Ar-40 gold
+            circle.classList.remove('decaying');
+          }, 400);
+        }
+      }, i * 8); // staggered for visual effect
+    });
+
+    // After all decays animate, update counts and table
+    const totalDelay = toDecay.length * 8 + 600;
+    setTimeout(() => {
+      halfLivesElapsed++;
+      updateDisplay();
+      addTableRow();
+
+      isAnimating = false;
+      if (halfLivesElapsed >= MAX_HALF_LIVES) {
+        advanceBtn.disabled = true;
+        advanceBtn.innerHTML = '✓ Decay complete<br><span style="font-size: 11px; font-weight: normal;">Now plot your data in your journal</span>';
+      } else {
+        advanceBtn.disabled = false;
+      }
+    }, totalDelay);
+  }
+
+  // ====== Update text counts ======
+  function updateDisplay() {
+    const parentNow = parentAtoms.filter(a => a.isParent).length;
+    const daughterNow = INITIAL_PARENT - parentNow;
+    parentCountEl.textContent = parentNow;
+    daughterCountEl.textContent = daughterNow;
+    halfLivesValueEl.textContent = halfLivesElapsed;
+    timeValueEl.textContent = (halfLivesElapsed * HALF_LIFE_MA).toLocaleString();
+  }
+
+  // ====== Append a new row to the data table ======
+  function addTableRow() {
+    const parentNow = parentAtoms.filter(a => a.isParent).length;
+    const pct = (parentNow / INITIAL_PARENT * 100).toFixed(1);
+    const time = halfLivesElapsed * HALF_LIFE_MA;
+
+    const row = document.createElement('tr');
+    row.classList.add('row-new');
+    row.innerHTML = `
+      <td>${halfLivesElapsed}</td>
+      <td>${time.toLocaleString()}</td>
+      <td>${parentNow}</td>
+      <td>${pct}%</td>
+    `;
+    tableBody.appendChild(row);
+
+    // Remove animation class after animation
+    setTimeout(() => row.classList.remove('row-new'), 1000);
+  }
+
+  // ====== Reset everything ======
+  function resetSim() {
+    halfLivesElapsed = 0;
+    isAnimating = false;
+    advanceBtn.disabled = false;
+    advanceBtn.innerHTML = '⏵ Advance 1 Half-Life<br><span style="font-size: 11px; font-weight: normal;">(1.25 billion years)</span>';
+    initRock();
+    updateDisplay();
+
+    // Clear table except header row
+    tableBody.innerHTML = `
+      <tr>
+        <td>0</td>
+        <td>0</td>
+        <td>200</td>
+        <td>100.0%</td>
+      </tr>
+    `;
+
+  }
+
+  // ====== Wire up events ======
+  advanceBtn.addEventListener('click', advanceHalfLife);
+  resetBtn.addEventListener('click', resetSim);
+
+  // ====== Init ======
+  initRock();
+</script>
+
+</body>
+</html>
